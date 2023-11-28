@@ -1,0 +1,5 @@
+interface loopback0
+   ip address 192.168.201.22/32
+interface loopback1
+   ip address 192.168.202.21/32
+
