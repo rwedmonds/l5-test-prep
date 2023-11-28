@@ -64,14 +64,12 @@ def gen_loopback_pl_rm(host):
     Generate prefix-list and route-map to advertise loopbacks
     """
     seq_num = 10
+    loopback_ranges = ["192.168.101.0/24", "192.168.102.0/24", "192.168.201.0/24", "192.168.202.0/24"]
     config = ""
     config += "ip prefix-list LOOPBACK\n"
-    for interface in underlay[host]['interfaces']:
-        if interface.startswith('loopback'):
-            ip = underlay[host]['interfaces'][interface]['ipv4']
-            mask = underlay[host]['interfaces'][interface]['mask']
-            config += "   seq %s permit %s/%s eq 32\n" % (seq_num, ip, mask)
-            seq_num += 10
+    for loopback_range in loopback_ranges:
+        config += "   seq %s permit %s\n" % (seq_num, loopback_range)
+        seq_num += 10
     config += """!\nroute-map LOOPBACK permit 10
    match ip address prefix-list LOOPBACK
 !"""
@@ -85,7 +83,8 @@ def gen_peer_filter():
     """
     config = ""
     config += """peer-filter LEAF-AS-RANGE
-   10 match as-rang 65000-65535 accept"""
+   10 match as-rang 65000-65535 accept
+!"""
     return config
 
 
@@ -111,15 +110,18 @@ def gen_base_bgp_config(host):
    router-id %s
    no bgp default ipv4-unicast
    maximum-paths 3
-   distance bgp 20 200 200""" % (asn, lo0)
+   distance bgp 20 200 200
+   !
+""" % (asn, lo0)
     if "spine" in host:
-        config += """bgp listen range 192.168.0.0/16 peer-group LEAF_Underlay peer-filter LEAF-AS-RANGE"""
+        config += """
+   bgp listen range 192.168.0.0/16 peer-group LEAF_Underlay peer-filter LEAF-AS-RANGE"""
     if "leaf" in host:
         if "DC1" in host:
-            spine_asn = underlay['global']['DC1']['ASN']
+            spine_asn = underlay['global']['DC1']['spine_ASN']
         elif "DC2" in host:
-            spine_asn = underlay['global']['DC2']['ASN']
-        config += """neighbor SPINE_Underlay peer group
+            spine_asn = underlay['global']['DC2']['spine_ASN']
+        config += """   neighbor SPINE_Underlay peer group
    neighbor SPINE_Underlay remote-as %s
    neighbor SPINE_Underlay send-community
    neighbor SPINE_Underlay maximum-routes 12000
@@ -127,31 +129,20 @@ def gen_base_bgp_config(host):
    neighbor LEAF_Peer peer group
    neighbor LEAF_Peer remote-as %s
    neighbor LEAF_Peer next-hop-self
-   neighbor LEAF_Peer maximum-routes 12000""" % (spine_asn, asn)
-    return config
-
-
-def gen_leaf_peer_group_config(host):
-    asn = underlay[host]['BGP']['ASN']
-    spine_asn = underlay[host]['BGP']['spine-ASN']
-    config = """   neighbor Underlay peer group
-   neighbor Underlay remote-as %s
-   neighbor Underlay send-community
-   neighbor Underlay maximum-routes 12000
-   !
-   neighbor LEAF_Peer peer group
-   neighbor LEAF_Peer remote-as %s
-   neighbor LEAF_Peer next-hop-self
    neighbor LEAF_Peer maximum-routes 12000
-   !
-   neighbor EVPN peer group
-   neighbor EVPN remote-as %s
-   neighbor EVPN update-source Loopback0
-   neighbor EVPN ebgp-multihop
-   neighbor EVPN send-community
-   neighbor EVPN maximum-routes 0
-   !""" % (spine_asn, asn, spine_asn)
+   !""" % (spine_asn, asn)
     return config
+
+
+# def gen_leaf_peer_group_config(host):
+#     asn = underlay[host]['BGP']['ASN']
+#     spine_asn = underlay[host]['BGP']['spine-ASN']
+#     config = """   neighbor LEAF_Peer peer group
+#    neighbor LEAF_Peer remote-as %s
+#    neighbor LEAF_Peer next-hop-self
+#    neighbor LEAF_Peer maximum-routes 12000
+#    !""" % (spine_asn)
+#     return config
 
 
 def gen_spine_configs():
@@ -161,6 +152,7 @@ def gen_spine_configs():
     print("service routing protocols model multi-agent")
     print(gen_interfaces(hostname))
     print(gen_loopback_pl_rm(hostname))
+    print(gen_peer_filter())
     print(gen_base_bgp_config(hostname))
     print(SPINE_PEER_GROUP_CONFIG)
     print("   redistribute connected route-map LOOPBACK\n   !")
@@ -174,13 +166,16 @@ def gen_leaf_configs():
     Generate the underlay and overlay configs for the leafs
     """
     mlag_odd_even = underlay[hostname]['MLAG']
+    remote_as = underlay[hostname]['BGP']['spine-ASN']
+    asn = underlay[hostname]['BGP']['ASN']
     print(gen_interfaces(hostname))
     print(gen_loopback_pl_rm(hostname))
     print(gen_base_bgp_config(hostname))
-    print(gen_leaf_peer_group_config(hostname))
+    # print(gen_leaf_peer_group_config(hostname))
+
 
     for spine_peer in underlay[hostname]['BGP']['spine-peers']:
-        print("   neighbor %s peer group Underlay") % spine_peer
+        print("   neighbor %s peer group SPINE_Underlay") % spine_peer
     print("   !")
 
     if mlag_odd_even == 'Odd':
@@ -188,19 +183,10 @@ def gen_leaf_configs():
     elif mlag_odd_even == 'Even':
         print("   neighbor 192.168.255.1 peer group LEAF_Peer\n   !")
 
-    if 'DC1' in hostname:
-        for spine_peer in underlay['global']['DC1']['spine_peers']:
-            print("   neighbor %s peer group EVPN") % spine_peer
-    elif 'DC2' in hostname:
-        for spine_peer in underlay['global']['DC2']['spine_peers']:
-            print("   neighbor %s peer group EVPN") % spine_peer
-    print("   !")
     print("   redistribute connected route-map LOOPBACK\n   !")
-    print("""   address-family evpn
-      neighbor EVPN activate
-   !
+    print("""   !
    address-family ipv4
-      neighbor Underlay activate
+      neighbor SPINE_Underlay activate
       neighbor LEAF_Peer activate""")
 
 
