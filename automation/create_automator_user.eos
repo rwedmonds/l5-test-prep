@@ -1,0 +1,3 @@
+username automator privelege 15 role network-admin nopassword
+username automator ssh-key <paste ssh host key here>
+

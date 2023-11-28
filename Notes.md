@@ -8,3 +8,7 @@ To change the cursor color, press `cmd` + `shift` + `p` and type `settings.json`
         "editorCursor.foreground": "#ffe600",
         "terminalCursor.foreground": "#ffe600"
     }
+
+Ansible command to ping all hosts in inventory file (given the file is named **host.ini**):
+
+`ansible -m ping all -i hosts.ini`
