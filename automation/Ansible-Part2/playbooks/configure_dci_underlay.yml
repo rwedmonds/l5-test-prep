@@ -1,0 +1,15 @@
+---
+- hosts: DCIs
+  gather_facts: false
+  tasks:
+    - name: Register variables
+      include_vars:
+        file: "../vars/ebgp_underlay.yml"
+        name: underlay
+    - name: Test variables
+      debug:
+        msg: "{{ underlay }}"
+    - name: Create underlay configuration for spines
+      template:
+        src: "../templates/dci_underlay.j2"
+        dest: "./configs/{{inventory_hostname}}_underlay.cfg"

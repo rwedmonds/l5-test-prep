@@ -1,6 +1,15 @@
 ---
-- hosts: leafs_DC1, leafs_DC2
-  gather_facts: no
+- hosts: MLAG_Odd
+  gather_facts: false
   tasks:
-  - name: Configure MLAG left side
-
+    - name: Configure MLAG on odd-numbered switches
+      template:
+        src: "{{lookup('env','PWD')}}/templates/mlag_odd.j2"
+        dest: "{{lookup('env','PWD')}}/configs/{{inventory_hostname}}_mlag.cfg"
+- hosts: MLAG_Even
+  gather_facts: false
+  tasks:
+    - name: Configure MLAG on even-numbered switches
+      template:
+        src: "{{lookup('env','PWD')}}/templates/mlag_even.j2"
+        dest: "{{lookup('env','PWD')}}/configs/{{inventory_hostname}}_mlag.cfg"
