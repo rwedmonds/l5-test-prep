@@ -1,8 +1,11 @@
 global:
+    DCI:
+    lo0: "192.168.253.0/24"
   DC1:
     spine_ASN: 65100
     p2p: "192.168.103.0/24"
     lo0: "192.168.101.0/24"
+    lo1: "192.168.102.0/24"
     spine_peers:
       - 192.168.101.101
       - 192.168.101.102
@@ -11,11 +14,36 @@ global:
     spine_ASN: 65200
     p2p: "192.168.203.0/24"
     lo0: "192.168.201.0/24"
+    lo1: "192.168.202.0/24"
     spine_peers:
       - 192.168.201.101
       - 192.168.201.102
       - 192.168.201.103
   MTU: 9214
+DCI:
+  interfaces:
+    loopback0:
+      ipv4: 192.168.253.1
+      mask: 32
+    Ethernet1:
+      ipv4: 192.168.254.1
+      mask: 31
+    Ethernet2:
+      ipv4: 192.168.254.3
+      mask: 31
+    Ethernet3:
+      ipv4: 192.168.254.5
+      mask: 31
+    Ethernet4:
+      ipv4: 192.168.254.7
+      mask: 31
+  BGP:
+    ASN: 65000
+    borderleaf_peers:
+      - 192.168.254.0
+      - 192.168.254.2
+      - 192.168.254.4
+      - 192.168.254.6
 spine1-DC1:
   interfaces:
     loopback0:
@@ -238,7 +266,7 @@ borderleaf2-DC1:
       ipv4: 192.168.103.40
       mask: 31
     Ethernet12:
-      ipv4: 192.168.254.3
+      ipv4: 192.168.254.2
       mask: 31
   BGP:
     ASN: 65103
@@ -478,4 +506,3 @@ borderleaf2-DC2:
       - 192.168.203.33
       - 192.168.203.35
   MLAG: Even
-
