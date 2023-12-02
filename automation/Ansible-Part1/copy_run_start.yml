@@ -1,9 +1,8 @@
 ---
-  - hosts: all
-    gather_facts: no
-    tasks: 
+- hosts: all
+  gather_facts: false
+  tasks:
     - name: Save config
       eos_command:
         commands:
           - copy run start
-

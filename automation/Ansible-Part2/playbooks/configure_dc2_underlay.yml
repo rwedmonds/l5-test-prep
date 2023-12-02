@@ -1,0 +1,29 @@
+---
+- hosts: spines_DC2
+  gather_facts: false
+  tasks:
+    - name: Register variables
+      include_vars:
+        file: "../vars/ebgp_underlay.yml"
+        name: underlay
+    - name: Test variables
+      debug:
+        msg: "{{ underlay }}"
+    - name: Create underlay configuration for spines
+      template:
+        src: "../templates/spines_dc2_underlay.j2"
+        dest: "./configs/{{inventory_hostname}}_underlay.cfg"
+- hosts: leafs_DC2
+  gather_facts: false
+  tasks:
+    - name: Register variables
+      include_vars:
+        file: "../vars/ebgp_underlay.yml"
+        name: underlay
+    - name: Test variables
+      debug:
+        msg: "{{ underlay }}"
+    - name: Create underlay configuration for leafs
+      template:
+        src: "../templates/leafs_dc2_underlay.j2"
+        dest: "./configs/{{inventory_hostname}}_underlay.cfg"

@@ -1,11 +1,10 @@
 ---
-  - hosts: leaf1-DC1
-    gather_facts: no
-    tasks:
+- hosts: leaf1-DC1
+  gather_facts: false
+  tasks:
     - name: Delete vlan
       eos_vlans:
         config:
-        - vlan_id: 4000
-          state: active
+          - vlan_id: 4000
+            state: active
         state: deleted
-

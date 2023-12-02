@@ -1,10 +1,10 @@
 ---
-  - hosts: all
-    gather_facts: no
-    tasks:
+- hosts: all
+  gather_facts: false
+  tasks:
     - name: Add User
       eos_user:
-        name: automator 
+        name: automator
         nopassword: yes
         privilege: 15
         role: network-admin
@@ -14,4 +14,3 @@
         name: automator
         sshkey: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
         state: present
-
